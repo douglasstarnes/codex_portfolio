@@ -46,6 +46,18 @@ def test_create_and_list_transactions() -> None:
 def test_get_transaction_by_id() -> None:
     client = build_test_client()
 
+    buy_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "ETH",
+            "coingecko_id": "ethereum",
+            "name": "Ethereum",
+            "quantity": "1.5",
+            "transaction_type": "buy",
+        },
+    )
+    assert buy_response.status_code == 201
+
     create_response = client.post(
         "/transactions",
         json={
@@ -67,6 +79,64 @@ def test_get_transaction_by_id() -> None:
     assert transaction["coingecko_id"] == "ethereum"
     assert transaction["name"] == "Ethereum"
     assert transaction["transaction_type"] == "sell"
+
+
+def test_create_transaction_allows_sell_when_enough_coin_is_owned() -> None:
+    client = build_test_client()
+
+    buy_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.25",
+            "transaction_type": "buy",
+        },
+    )
+    assert buy_response.status_code == 201
+
+    sell_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.25",
+            "transaction_type": "sell",
+        },
+    )
+
+    assert sell_response.status_code == 201
+    assert sell_response.json()["transaction_type"] == "sell"
+
+
+def test_create_transaction_rejects_sell_when_not_enough_coin_is_owned() -> None:
+    client = build_test_client()
+
+    buy_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.10",
+            "transaction_type": "buy",
+        },
+    )
+    assert buy_response.status_code == 201
+
+    sell_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.25",
+            "transaction_type": "sell",
+        },
+    )
+
+    assert sell_response.status_code == 400
+    assert sell_response.json() == {
+        "detail": "Cannot sell 0.25 BTC; only 0.100000000000 owned"
+    }
 
 
 def test_get_transaction_returns_404_for_missing_id() -> None:

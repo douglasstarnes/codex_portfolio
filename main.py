@@ -43,6 +43,30 @@ def create_transaction(
     db: Session = Depends(get_db),
     coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
 ) -> InvestmentTransaction:
+    if investment.transaction_type == "sell":
+        existing_transactions = db.scalars(
+            select(InvestmentTransaction).where(
+                InvestmentTransaction.coingecko_id == investment.coingecko_id
+            )
+        ).all()
+        owned_quantity = sum(
+            (
+                transaction.quantity
+                if transaction.transaction_type == "buy"
+                else -transaction.quantity
+                for transaction in existing_transactions
+            ),
+            Decimal("0"),
+        )
+        if owned_quantity < investment.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Cannot sell {investment.quantity} {investment.symbol}; "
+                    f"only {owned_quantity} owned"
+                ),
+            )
+
     try:
         purchase_price_usd = coingecko_client.get_current_price_usd(investment.coingecko_id)
     except CoinGeckoConfigError as exc:

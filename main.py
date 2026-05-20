@@ -1,13 +1,21 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from decimal import Decimal
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from coingecko import (
+    CoinGeckoClient,
+    CoinGeckoConfigError,
+    CoinGeckoError,
+    CoinGeckoPriceNotFoundError,
+    get_coingecko_client,
+)
 from database import Base, engine, get_db
 from db_models import InvestmentTransaction
-from models import Investment, InvestmentCreate
+from models import CoinValue, Investment, InvestmentCreate, PortfolioValue
 
 
 @asynccontextmanager
@@ -33,8 +41,21 @@ def health_check() -> dict[str, str]:
 def create_transaction(
     investment: InvestmentCreate,
     db: Session = Depends(get_db),
+    coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
 ) -> InvestmentTransaction:
-    transaction = InvestmentTransaction(**investment.model_dump())
+    try:
+        purchase_price_usd = coingecko_client.get_current_price_usd(investment.coingecko_id)
+    except CoinGeckoConfigError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except CoinGeckoPriceNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except CoinGeckoError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    transaction = InvestmentTransaction(
+        **investment.model_dump(),
+        purchase_price_usd=purchase_price_usd,
+    )
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
@@ -44,6 +65,58 @@ def create_transaction(
 @app.get("/transactions", response_model=list[Investment])
 def list_transactions(db: Session = Depends(get_db)) -> list[InvestmentTransaction]:
     return list(db.scalars(select(InvestmentTransaction)).all())
+
+
+@app.get("/portfolio/current_value", response_model=PortfolioValue)
+def get_current_portfolio_value(
+    db: Session = Depends(get_db),
+    coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
+) -> PortfolioValue:
+    transactions = list(db.scalars(select(InvestmentTransaction)).all())
+    net_quantities: dict[str, Decimal] = {}
+    symbols: dict[str, str] = {}
+
+    for transaction in transactions:
+        multiplier = Decimal("1") if transaction.transaction_type == "buy" else Decimal("-1")
+        net_quantities[transaction.coingecko_id] = (
+            net_quantities.get(transaction.coingecko_id, Decimal("0"))
+            + (transaction.quantity * multiplier)
+        )
+        symbols[transaction.coingecko_id] = transaction.symbol
+
+    net_quantities = {
+        coingecko_id: quantity
+        for coingecko_id, quantity in net_quantities.items()
+        if quantity != Decimal("0")
+    }
+
+    try:
+        current_prices = coingecko_client.get_current_prices_usd(list(net_quantities))
+    except CoinGeckoConfigError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except CoinGeckoPriceNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except CoinGeckoError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    coins = [
+        CoinValue(
+            symbol=symbols[coingecko_id],
+            coingecko_id=coingecko_id,
+            quantity=quantity,
+            current_price_usd=current_prices[coingecko_id],
+            total_value_usd=quantity * current_prices[coingecko_id],
+        )
+        for coingecko_id, quantity in net_quantities.items()
+    ]
+
+    return PortfolioValue(
+        coins=coins,
+        total_value_usd=sum(
+            (coin.total_value_usd for coin in coins),
+            Decimal("0"),
+        ),
+    )
 
 
 @app.get("/transactions/{transaction_id}", response_model=Investment)

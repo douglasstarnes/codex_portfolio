@@ -9,8 +9,9 @@ def test_investment_create_defaults_optional_fields() -> None:
 
     investment = InvestmentCreate(
         symbol="BTC",
+        coingecko_id="bitcoin",
         quantity=Decimal("0.25"),
-        purchase_price_usd=Decimal("65000.00"),
+        transaction_type="buy",
     )
 
     after_create = datetime.now(UTC)
@@ -24,11 +25,13 @@ def test_investment_create_allows_explicit_optional_fields() -> None:
 
     investment = InvestmentCreate(
         symbol="ETH",
+        coingecko_id="ethereum",
         name="Ethereum",
         quantity=Decimal("1.5"),
-        purchase_price_usd=Decimal("3200.00"),
+        transaction_type="sell",
         purchased_at=purchased_at,
     )
 
     assert investment.name == "Ethereum"
+    assert investment.transaction_type == "sell"
     assert investment.purchased_at == purchased_at

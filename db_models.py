@@ -12,8 +12,10 @@ class InvestmentTransaction(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     symbol: Mapped[str] = mapped_column(String(16), index=True, nullable=False)
+    coingecko_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     quantity: Mapped[Decimal] = mapped_column(Numeric(24, 12), nullable=False)
+    transaction_type: Mapped[str] = mapped_column(String(8), nullable=False)
     purchase_price_usd: Mapped[Decimal] = mapped_column(Numeric(24, 2), nullable=False)
     purchased_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

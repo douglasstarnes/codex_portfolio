@@ -6,7 +6,10 @@ A minimal FastAPI application.
 
 ```bash
 uv sync --dev
+cp .env.example .env
 ```
+
+Add your CoinGecko Demo API key to `.env`.
 
 ## Run
 

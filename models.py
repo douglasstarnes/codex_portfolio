@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InvestmentBase(BaseModel):
@@ -26,4 +26,6 @@ class InvestmentUpdate(BaseModel):
 
 
 class Investment(InvestmentBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID

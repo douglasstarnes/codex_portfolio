@@ -1,6 +1,5 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
@@ -49,7 +48,7 @@ def list_transactions(db: Session = Depends(get_db)) -> list[InvestmentTransacti
 
 @app.get("/transactions/{transaction_id}", response_model=Investment)
 def get_transaction(
-    transaction_id: UUID,
+    transaction_id: int,
     db: Session = Depends(get_db),
 ) -> InvestmentTransaction:
     transaction = db.get(InvestmentTransaction, transaction_id)

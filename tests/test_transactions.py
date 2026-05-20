@@ -23,7 +23,7 @@ def test_create_and_list_transactions() -> None:
 
     assert create_response.status_code == 201
     created_transaction = create_response.json()
-    assert created_transaction["id"]
+    assert created_transaction["id"] == 1
     assert created_transaction["symbol"] == "BTC"
     assert created_transaction["name"] is None
     assert created_transaction["purchased_at"]
@@ -62,7 +62,7 @@ def test_get_transaction_by_id() -> None:
 def test_get_transaction_returns_404_for_missing_id() -> None:
     client = build_test_client()
 
-    response = client.get("/transactions/00000000-0000-0000-0000-000000000000")
+    response = client.get("/transactions/999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Transaction not found"}

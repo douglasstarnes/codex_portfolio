@@ -1,5 +1,7 @@
 # Codex Portfolio
 
+*I vibe coded this app from scratch just to see how far I could get without writing anything myself.*
+
 A minimal FastAPI application.
 
 ## Setup

@@ -9,6 +9,9 @@ TransactionType = Literal["buy", "sell"]
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=1, max_length=50, examples=["satoshi"])
+    email: str | None = Field(
+        default=None, min_length=3, max_length=255, examples=["satoshi@example.com"]
+    )
 
 
 class UserCreate(UserBase):

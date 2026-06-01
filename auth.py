@@ -10,7 +10,7 @@ from config import get_settings
 from models import TokenData
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def _invalid_token_exception() -> HTTPException:

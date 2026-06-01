@@ -2,11 +2,10 @@
 
 *I vibe coded this app from scratch just to see how far I could get without writing anything myself.*
 
-<<<<<<< HEAD
+
 A minimal FastAPI application for tracking cryptocurrency portfolio transactions.
 =======
 A portfolio application split into separate backend and frontend workspaces.
->>>>>>> cb25bee (Add .gitkeep file to frontend directory for tracking empty folders)
 
 ## Layout
 
@@ -23,7 +22,7 @@ cp .env.example .env
 
 Add your CoinGecko Demo API key to `backend/.env`.
 
-<<<<<<< HEAD
+
 ### Environment variables
 
 The application reads configuration from `.env`:
@@ -47,7 +46,6 @@ Required JWT configuration:
 ## Run
 =======
 ## Backend Run
->>>>>>> cb25bee (Add .gitkeep file to frontend directory for tracking empty folders)
 
 ```bash
 cd backend
@@ -56,7 +54,7 @@ uv run uvicorn main:app --reload
 
 Open `http://127.0.0.1:8000`.
 
-<<<<<<< HEAD
+
 ## Authentication
 
 The `/health` endpoint remains public and does not require a token. Transaction and portfolio endpoints require authentication with an `Authorization: Bearer <token>` header, including:
@@ -132,7 +130,6 @@ curl -X POST http://127.0.0.1:8000/transactions \
 ## Test
 =======
 ## Backend Test
->>>>>>> cb25bee (Add .gitkeep file to frontend directory for tracking empty folders)
 
 ```bash
 cd backend

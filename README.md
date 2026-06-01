@@ -2,9 +2,12 @@
 
 *I vibe coded this app from scratch just to see how far I could get without writing anything myself.*
 
+<<<<<<< HEAD
 
 A minimal FastAPI application for tracking cryptocurrency portfolio transactions.
 =======
+=======
+>>>>>>> 279f3bb (fix: resolve merge conflicts and clean up README structure)
 A portfolio application split into separate backend and frontend workspaces.
 
 ## Layout
@@ -22,7 +25,10 @@ cp .env.example .env
 
 Add your CoinGecko Demo API key to `backend/.env`.
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 279f3bb (fix: resolve merge conflicts and clean up README structure)
 ### Environment variables
 
 The application reads configuration from `.env`:
@@ -43,8 +49,6 @@ Required JWT configuration:
 - `JWT_ALGORITHM`: signing algorithm for JWTs. The default is `HS256`.
 - `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`: number of minutes before issued access tokens expire. The default is `30`.
 
-## Run
-=======
 ## Backend Run
 
 ```bash
@@ -54,7 +58,10 @@ uv run uvicorn main:app --reload
 
 Open `http://127.0.0.1:8000`.
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 279f3bb (fix: resolve merge conflicts and clean up README structure)
 ## Authentication
 
 The `/health` endpoint remains public and does not require a token. Transaction and portfolio endpoints require authentication with an `Authorization: Bearer <token>` header, including:
@@ -127,8 +134,6 @@ curl -X POST http://127.0.0.1:8000/transactions \
   }'
 ```
 
-## Test
-=======
 ## Backend Test
 
 ```bash

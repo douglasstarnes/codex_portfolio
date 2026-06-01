@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Integer, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -22,12 +22,18 @@ class User(Base):
         default=lambda: datetime.now(UTC),
         nullable=False,
     )
+    transactions: Mapped[list["InvestmentTransaction"]] = relationship(
+        back_populates="user"
+    )
 
 
 class InvestmentTransaction(Base):
     __tablename__ = "investment_transactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), index=True, nullable=False
+    )
     symbol: Mapped[str] = mapped_column(String(16), index=True, nullable=False)
     coingecko_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -39,3 +45,4 @@ class InvestmentTransaction(Base):
         default=lambda: datetime.now(UTC),
         nullable=False,
     )
+    user: Mapped[User] = relationship(back_populates="transactions")

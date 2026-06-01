@@ -7,6 +7,40 @@ from pydantic import BaseModel, ConfigDict, Field
 TransactionType = Literal["buy", "sell"]
 
 
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=1, max_length=50, examples=["satoshi"])
+
+
+class UserCreate(UserBase):
+    password: str = Field(
+        ..., min_length=8, max_length=128, examples=["correct-horse-battery-staple"]
+    )
+
+
+class UserRead(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    is_active: bool = True
+    created_at: datetime
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=50, examples=["satoshi"])
+    password: str = Field(
+        ..., min_length=8, max_length=128, examples=["correct-horse-battery-staple"]
+    )
+
+
 class InvestmentBase(BaseModel):
     symbol: str = Field(..., min_length=1, max_length=16, examples=["BTC"])
     coingecko_id: str = Field(..., min_length=1, max_length=100, examples=["bitcoin"])

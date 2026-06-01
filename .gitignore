@@ -14,5 +14,11 @@ wheels/
 .venv
 .env
 
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+
 # Local application data
 portfolio.db

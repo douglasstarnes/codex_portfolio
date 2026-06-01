@@ -2,17 +2,12 @@
 
 *I vibe coded this app from scratch just to see how far I could get without writing anything myself.*
 
-
-A minimal FastAPI application for tracking cryptocurrency portfolio transactions.
-=======
-=======
-
 A portfolio application split into separate backend and frontend workspaces.
 
 ## Layout
 
 - `backend/` contains the FastAPI application, Python dependencies, and backend tests.
-- `frontend/` is reserved for the future Next.js application.
+- `frontend/` contains the Next.js application, Tailwind styles, shadcn/ui components, and frontend API proxy routes.
 
 ## Backend Setup
 
@@ -24,12 +19,9 @@ cp .env.example .env
 
 Add your CoinGecko Demo API key to `backend/.env`.
 
-
-=======
-
 ### Environment variables
 
-The application reads configuration from `.env`:
+The backend reads configuration from `.env`:
 
 ```env
 COINGECKO_API_KEY=your-coingecko-demo-api-key
@@ -56,8 +48,23 @@ uv run uvicorn main:app --reload
 
 Open `http://127.0.0.1:8000`.
 
+## Frontend Setup
 
-=======
+```bash
+cd frontend
+npm install
+```
+
+The frontend API proxy defaults to `http://127.0.0.1:8000`. To point it elsewhere, set `API_BASE_URL` or `NEXT_PUBLIC_API_BASE_URL`.
+
+## Frontend Run
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:3000`.
 
 ## Authentication
 
@@ -67,6 +74,8 @@ The `/health` endpoint remains public and does not require a token. Transaction 
 - `GET /transactions`
 - `GET /transactions/{transaction_id}`
 - `GET /portfolio/current_value`
+
+The frontend stores the backend access token in an httpOnly cookie through its same-origin API routes.
 
 ### Register a user
 
@@ -131,9 +140,15 @@ curl -X POST http://127.0.0.1:8000/transactions \
   }'
 ```
 
-## Backend Test
+## Test
 
 ```bash
 cd backend
 uv run pytest
+```
+
+```bash
+cd frontend
+npm run lint
+npm run build
 ```

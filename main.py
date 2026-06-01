@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from auth_routes import router as auth_router
 from coingecko import (
     CoinGeckoClient,
     CoinGeckoConfigError,
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Codex Portfolio", lifespan=lifespan)
+app.include_router(auth_router)
 
 
 @app.get("/")

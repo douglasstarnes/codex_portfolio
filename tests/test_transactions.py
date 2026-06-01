@@ -1,14 +1,48 @@
 from collections.abc import Generator
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from auth import get_current_user
 from coingecko import CoinGeckoError, get_coingecko_client
 from database import Base, get_db
+from db_models import User
 from main import app
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "json"),
+    [
+        (
+            "post",
+            "/transactions",
+            {
+                "symbol": "BTC",
+                "coingecko_id": "bitcoin",
+                "quantity": "0.25",
+                "transaction_type": "buy",
+            },
+        ),
+        ("get", "/transactions", None),
+        ("get", "/transactions/1", None),
+        ("get", "/portfolio/current_value", None),
+    ],
+)
+def test_transaction_routes_require_authenticated_user(
+    method: str,
+    path: str,
+    json: dict[str, str] | None,
+) -> None:
+    client = build_test_client(authenticated=False)
+
+    response = client.request(method, path, json=json)
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Could not validate credentials"}
 
 
 def test_create_and_list_transactions() -> None:
@@ -248,7 +282,10 @@ def test_get_current_portfolio_value_returns_empty_portfolio() -> None:
     assert response.json() == {"coins": [], "total_value_usd": "0"}
 
 
-def build_test_client(coingecko_client: object | None = None) -> TestClient:
+def build_test_client(
+    coingecko_client: object | None = None,
+    authenticated: bool = True,
+) -> TestClient:
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -271,6 +308,13 @@ def build_test_client(coingecko_client: object | None = None) -> TestClient:
     app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_coingecko_client] = lambda: coingecko_client or FakeCoinGeckoClient()
+    if authenticated:
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=1,
+            username="satoshi",
+            hashed_password="unused",
+            is_active=True,
+        )
     return TestClient(app)
 
 

@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from auth import get_current_user
 from auth_routes import router as auth_router
 from coingecko import (
     CoinGeckoClient,
@@ -15,7 +16,7 @@ from coingecko import (
     get_coingecko_client,
 )
 from database import Base, engine, get_db
-from db_models import InvestmentTransaction
+from db_models import InvestmentTransaction, User
 from models import CoinValue, Investment, InvestmentCreate, PortfolioValue
 
 
@@ -42,6 +43,7 @@ def health_check() -> dict[str, str]:
 @app.post("/transactions", response_model=Investment, status_code=201)
 def create_transaction(
     investment: InvestmentCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
 ) -> InvestmentTransaction:
@@ -89,12 +91,16 @@ def create_transaction(
 
 
 @app.get("/transactions", response_model=list[Investment])
-def list_transactions(db: Session = Depends(get_db)) -> list[InvestmentTransaction]:
+def list_transactions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[InvestmentTransaction]:
     return list(db.scalars(select(InvestmentTransaction)).all())
 
 
 @app.get("/portfolio/current_value", response_model=PortfolioValue)
 def get_current_portfolio_value(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
 ) -> PortfolioValue:
@@ -148,6 +154,7 @@ def get_current_portfolio_value(
 @app.get("/transactions/{transaction_id}", response_model=Investment)
 def get_transaction(
     transaction_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> InvestmentTransaction:
     transaction = db.get(InvestmentTransaction, transaction_id)

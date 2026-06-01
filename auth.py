@@ -5,8 +5,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from config import get_settings
+from database import get_db
+from db_models import User
 from models import TokenData
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -70,3 +74,17 @@ def get_current_token_data(
     token: Annotated[str | None, Depends(oauth2_scheme)],
 ) -> TokenData:
     return decode_access_token(token)
+
+
+def get_current_user(
+    token_data: Annotated[TokenData, Depends(get_current_token_data)],
+    db: Session = Depends(get_db),
+) -> User:
+    if token_data.username is None:
+        raise _invalid_token_exception()
+
+    user = db.scalar(select(User).where(User.username == token_data.username))
+    if user is None or not user.is_active:
+        raise _invalid_token_exception()
+
+    return user

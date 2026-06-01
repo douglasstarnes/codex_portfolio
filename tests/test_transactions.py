@@ -182,6 +182,48 @@ def test_get_transaction_returns_404_for_missing_id() -> None:
     assert response.json() == {"detail": "Transaction not found"}
 
 
+def test_transaction_queries_are_scoped_to_authenticated_user() -> None:
+    client = build_test_client()
+
+    create_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.25",
+            "transaction_type": "buy",
+        },
+    )
+    assert create_response.status_code == 201
+    user_one_transaction_id = create_response.json()["id"]
+
+    set_authenticated_user(2)
+
+    list_response = client.get("/transactions")
+    assert list_response.status_code == 200
+    assert list_response.json() == []
+
+    get_response = client.get(f"/transactions/{user_one_transaction_id}")
+    assert get_response.status_code == 404
+    assert get_response.json() == {"detail": "Transaction not found"}
+
+    portfolio_response = client.get("/portfolio/current_value")
+    assert portfolio_response.status_code == 200
+    assert portfolio_response.json() == {"coins": [], "total_value_usd": "0"}
+
+    sell_response = client.post(
+        "/transactions",
+        json={
+            "symbol": "BTC",
+            "coingecko_id": "bitcoin",
+            "quantity": "0.25",
+            "transaction_type": "sell",
+        },
+    )
+    assert sell_response.status_code == 400
+    assert sell_response.json() == {"detail": "Cannot sell 0.25 BTC; only 0 owned"}
+
+
 def test_create_transaction_returns_502_when_price_fetch_fails() -> None:
     client = build_test_client(coingecko_client=FailingCoinGeckoClient())
 
@@ -309,13 +351,17 @@ def build_test_client(
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_coingecko_client] = lambda: coingecko_client or FakeCoinGeckoClient()
     if authenticated:
-        app.dependency_overrides[get_current_user] = lambda: User(
-            id=1,
-            username="satoshi",
-            hashed_password="unused",
-            is_active=True,
-        )
+        set_authenticated_user(1)
     return TestClient(app)
+
+
+def set_authenticated_user(user_id: int) -> None:
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=user_id,
+        username=f"user-{user_id}",
+        hashed_password="unused",
+        is_active=True,
+    )
 
 
 class FakeCoinGeckoClient:

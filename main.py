@@ -50,7 +50,8 @@ def create_transaction(
     if investment.transaction_type == "sell":
         existing_transactions = db.scalars(
             select(InvestmentTransaction).where(
-                InvestmentTransaction.coingecko_id == investment.coingecko_id
+                InvestmentTransaction.coingecko_id == investment.coingecko_id,
+                InvestmentTransaction.user_id == current_user.id,
             )
         ).all()
         owned_quantity = sum(
@@ -83,6 +84,7 @@ def create_transaction(
     transaction = InvestmentTransaction(
         **investment.model_dump(),
         purchase_price_usd=purchase_price_usd,
+        user_id=current_user.id,
     )
     db.add(transaction)
     db.commit()
@@ -95,7 +97,13 @@ def list_transactions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[InvestmentTransaction]:
-    return list(db.scalars(select(InvestmentTransaction)).all())
+    return list(
+        db.scalars(
+            select(InvestmentTransaction).where(
+                InvestmentTransaction.user_id == current_user.id
+            )
+        ).all()
+    )
 
 
 @app.get("/portfolio/current_value", response_model=PortfolioValue)
@@ -104,7 +112,13 @@ def get_current_portfolio_value(
     db: Session = Depends(get_db),
     coingecko_client: CoinGeckoClient = Depends(get_coingecko_client),
 ) -> PortfolioValue:
-    transactions = list(db.scalars(select(InvestmentTransaction)).all())
+    transactions = list(
+        db.scalars(
+            select(InvestmentTransaction).where(
+                InvestmentTransaction.user_id == current_user.id
+            )
+        ).all()
+    )
     net_quantities: dict[str, Decimal] = {}
     symbols: dict[str, str] = {}
 
@@ -157,7 +171,12 @@ def get_transaction(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> InvestmentTransaction:
-    transaction = db.get(InvestmentTransaction, transaction_id)
+    transaction = db.scalar(
+        select(InvestmentTransaction).where(
+            InvestmentTransaction.id == transaction_id,
+            InvestmentTransaction.user_id == current_user.id,
+        )
+    )
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
